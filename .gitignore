@@ -1,0 +1,5 @@
+/build/
+/.gradle/
+/.idea/
+/.nb-gradle/
+JCSG-PathExtensions.iml
