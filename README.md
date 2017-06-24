@@ -1,6 +1,8 @@
 # JCSG-PathExtensions
 A [JCSG](https://github.com/miho/JCSG) extension library for working with paths (linearize SVG paths, extrude &amp; extend)
 
+![](https://raw.githubusercontent.com/miho/JCSG-PathExtensions/master/resources/img/sample-01.jpg)
+
 ## Sample Code 1
 ```java
 public class ExtrudeSVGPath {
