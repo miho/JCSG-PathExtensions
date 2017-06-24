@@ -35,7 +35,7 @@ public class ExtrudeSVGPath {
 
 ## Sample Code 2
 ```java
-public class ExtrudeSVGPath {
+public class ExtrudeSVGPathHull {
 
     public static void main(String[] args) throws IOException {
 
@@ -61,6 +61,7 @@ public class ExtrudeSVGPath {
                 0.01, //       step size
                 0.0); //       extension
 
+        // difference between outer and inner
         CSG hull = outer.difference(inner);
 
         // save hull path to disk
