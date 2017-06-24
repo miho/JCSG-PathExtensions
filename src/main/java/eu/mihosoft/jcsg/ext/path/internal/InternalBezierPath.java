@@ -139,11 +139,10 @@ public class InternalBezierPath {
     }
 
     /**
-     * Evaluates this animation element for the passed interpolation time.
-     * Interp must be on [0..1].
+     * Returns the specified sample point on this path.
      *
-     * @param interp
-     * @return
+     * @param interp interpolation point (range: [0..1])
+     * @return sample point
      */
     public Vector3d eval(float interp) {
         SVGVector point = new SVGVector();

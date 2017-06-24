@@ -22,7 +22,6 @@
  */
 package eu.mihosoft.jcsg.ext.path;
 
-import eu.mihosoft.jcsg.ext.path.internal.InternalBezierPath;
 import eu.mihosoft.vvecmath.Vector3d;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +33,7 @@ import java.util.List;
  *
  * @author Michael Hoffer <info@michaelhoffer.de>
  */
+@SuppressWarnings( "deprecation" )
 public final class SVGLinearizer {
 
     private SVGLinearizer() {
@@ -62,7 +62,8 @@ public final class SVGLinearizer {
                     "Illegal step specified: step must be < 1!");
         }
 
-        InternalBezierPath path = new InternalBezierPath();
+        eu.mihosoft.jcsg.ext.path.internal.InternalBezierPath path
+                = new eu.mihosoft.jcsg.ext.path.internal.InternalBezierPath();
         path.parsePathString(svgPath);
 
         List<Vector3d> result = new ArrayList<>((int) (1.0 / step));
