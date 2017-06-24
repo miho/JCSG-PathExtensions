@@ -66,7 +66,7 @@ public final class SVGPath {
      * @param extension extends the path along vertex normals (XY plane)
      * @return CSG object
      */
-    public CSG toCSG(String path, double height,
+    public static CSG toCSG(String path, double height,
             double stepSize, double extension) {
         return Extrude.points(Vector3d.z(height),
                 LinearPathUtil.extend(
