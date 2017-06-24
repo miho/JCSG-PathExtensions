@@ -1,4 +1,6 @@
 # JCSG-PathExtensions
+[ ![Download](https://api.bintray.com/packages/miho/JCSG/JCSG-PathExtensions/images/download.svg) ](https://bintray.com/miho/JCSG/JCSG-PathExtensions/_latestVersion)
+
 A [JCSG](https://github.com/miho/JCSG) extension library for working with simple paths (linearize SVG paths, extrude &amp; extend)
 
 ![](https://raw.githubusercontent.com/miho/JCSG-PathExtensions/master/resources/img/sample-01.jpg)
