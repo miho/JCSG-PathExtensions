@@ -76,7 +76,7 @@ public final class LinearPathUtil {
         // 3. extend path along vertex normals
         for (int i = 0; i < path.size(); i++) {
             result.add(path.get(i).plus(vertexNormals.get(i).
-                    times(amount * 0.5)));
+                    times(amount)));
         }
 
         return result;
