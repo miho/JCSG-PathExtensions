@@ -1,5 +1,7 @@
 # JCSG-PathExtensions
-A [JCSG](https://github.com/miho/JCSG) extension library for working with paths (linearize SVG paths, extrude &amp; extend)
+[ ![Download](https://api.bintray.com/packages/miho/JCSG/JCSG-PathExtensions/images/download.svg) ](https://bintray.com/miho/JCSG/JCSG-PathExtensions/_latestVersion)
+
+A [JCSG](https://github.com/miho/JCSG) extension library for working with simple paths (linearize SVG paths, extrude &amp; extend)
 
 ![](https://raw.githubusercontent.com/miho/JCSG-PathExtensions/master/resources/img/sample-01.jpg)
 
@@ -33,7 +35,7 @@ public class ExtrudeSVGPath {
 
 ## Sample Code 2
 ```java
-public class ExtrudeSVGPath {
+public class ExtrudeSVGPathHull {
 
     public static void main(String[] args) throws IOException {
 
@@ -59,6 +61,7 @@ public class ExtrudeSVGPath {
                 0.01, //       step size
                 0.0); //       extension
 
+        // difference between outer and inner
         CSG hull = outer.difference(inner);
 
         // save hull path to disk
