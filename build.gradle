@@ -37,9 +37,9 @@ dependencies {
     compile group: 'eu.mihosoft.vvecmath', name: 'vvecmath', version: '0.3.8', classifier: 'sources'
     
     // jcsg library
-    compile group: 'eu.mihosoft.vrl.jcsg', name: 'jcsg', version: '0.5.5'
-    compile group: 'eu.mihosoft.vrl.jcsg', name: 'jcsg', version: '0.5.5', classifier: 'sources'
-    compile group: 'eu.mihosoft.vrl.jcsg', name: 'jcsg', version: '0.5.5', classifier: 'javadoc'
+    compile group: 'eu.mihosoft.vrl.jcsg', name: 'jcsg', version: '0.5.6'
+    compile group: 'eu.mihosoft.vrl.jcsg', name: 'jcsg', version: '0.5.6', classifier: 'sources'
+    compile group: 'eu.mihosoft.vrl.jcsg', name: 'jcsg', version: '0.5.6', classifier: 'javadoc'
 
 }
 
