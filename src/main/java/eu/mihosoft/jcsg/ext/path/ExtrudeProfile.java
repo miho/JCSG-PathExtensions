@@ -8,6 +8,8 @@ package eu.mihosoft.jcsg.ext.path;
 import eu.mihosoft.jcsg.CSG;
 import eu.mihosoft.jcsg.Extrude;
 import eu.mihosoft.jcsg.Polygon;
+import eu.mihosoft.vvecmath.ModifiableVector3d;
+import eu.mihosoft.vvecmath.Plane;
 import eu.mihosoft.vvecmath.Transform;
 import eu.mihosoft.vvecmath.Vector3d;
 import java.util.ArrayList;
@@ -17,7 +19,7 @@ import java.util.stream.Stream;
 
 /**
  * Extrudes profiles along paths.
- * 
+ *
  * @author Michael Hoffer <info@michaelhoffer.de>
  */
 public final class ExtrudeProfile {
@@ -29,7 +31,7 @@ public final class ExtrudeProfile {
     /**
      * Extrudes the specified profile along the given path.
      *
-     * @param profile profile to extrude
+     * @param profile profile to extrude (profile expected in XY plane)
      * @param path path
      * @return CSG object (extruded profile)
      */
@@ -38,13 +40,13 @@ public final class ExtrudeProfile {
                 map(p -> new Segment(p, profile)).
                 collect(Collectors.toList());
 
-        return extrudeSegments(segments);
+        return extrudeSegments(profile, segments);
     }
 
     /**
      * Extrudes the specified profile along the given path.
      *
-     * @param profile profile to extrude
+     * @param profile profile to extrude (profile expected in XY plane)
      * @param path path
      * @return CSG object (extruded profile)
      */
@@ -53,7 +55,7 @@ public final class ExtrudeProfile {
                 map(p -> new Segment(p, profile)).
                 collect(Collectors.toList());
 
-        return extrudeSegments(segments);
+        return extrudeSegments(profile, segments);
     }
 
     /**
@@ -62,12 +64,37 @@ public final class ExtrudeProfile {
      * @param segments segments to extrude
      * @return CSG object
      */
-    private static CSG extrudeSegments(List<Segment> segments) {
+    private static CSG extrudeSegments(PathProfile profile,
+            List<Segment> segments) {
 
         computeSegmentNormals(segments);
 
-        List<Vector3d> circlePoints = segments.get(0).getPoints();
-        List<Vector3d> prevProfilePoints = circlePoints;
+        List<Vector3d> profilePoints = new ArrayList<>(profile.getPoints());
+
+        // transform profile points to path direction
+        
+        Vector3d profileNormal
+                = Polygon.fromPoints(profilePoints).plane.getNormal();
+
+        if (!profileNormal.equals(segments.get(0).normal)) {
+            Transform rot = Transform.unity().rot(profileNormal,
+                    segments.get(0).normal);
+            for (int i = 0; i < profilePoints.size(); i++) {
+                profilePoints.set(i, 
+                        profilePoints.get(i).transformed(rot));
+            }
+        }
+
+        // translate profile to first path segment location
+        Vector3d offset = segments.get(0).pos.minus(profile.getCenter());
+        
+        Transform translate = Transform.unity().
+                translate(profile.getCenter().plus(offset));
+        
+        for (int i = 0; i < profilePoints.size(); i++) {
+            profilePoints.set(i, 
+                    profilePoints.get(i).transformed(translate));
+        }
 
         List<Polygon> polygons = new ArrayList<>();
 
@@ -108,10 +135,10 @@ public final class ExtrudeProfile {
             // translate profile points to new curve point
             // rotate profile points about binormal with curve angle 
             List<Vector3d> profilePointsTransformed
-                    = new ArrayList<>(prevProfilePoints.size());
+                    = new ArrayList<>(profilePoints.size());
 
             // finally apply the transforms
-            for (Vector3d p : prevProfilePoints) {
+            for (Vector3d p : profilePoints) {
                 // move points points from previous path point to current one
                 p = p.plus(segments.get(i).getPos().
                         minus(segments.get(i - 1).getPos()));
@@ -125,7 +152,7 @@ public final class ExtrudeProfile {
             // combine both profile profiles and close start and end to 
             // yield a valid CSG object
             CSG csg = CSG.fromPolygons(Extrude.combine(
-                    Polygon.fromPoints(prevProfilePoints),
+                    Polygon.fromPoints(profilePoints),
                     Polygon.fromPoints(profilePointsTransformed),
                     i == 1, i == segments.size() - 1));
 
@@ -133,7 +160,7 @@ public final class ExtrudeProfile {
 
             // use the current profile points as start points for the next
             // segment
-            prevProfilePoints = profilePointsTransformed;
+            profilePoints = profilePointsTransformed;
         }
 
         // finally, create the CSG

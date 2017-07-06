@@ -5,8 +5,11 @@
  */
 package eu.mihosoft.jcsg.ext.path;
 
+import eu.mihosoft.jcsg.Extrude;
+import eu.mihosoft.jcsg.Polygon;
 import eu.mihosoft.vvecmath.Vector3d;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,11 +28,16 @@ public final class PathProfile {
      * Constructor. Creates a new profile.
      *
      * @param center center of the profile
-     * @param points profile points (outline)
+     * @param points profile points (outline in XY plane)
      */
     private PathProfile(Vector3d center, List<Vector3d> points) {
         this.center = center;
         this.points.addAll(points);
+
+        if (!Extrude.isCCW(Polygon.fromPoints(this.points))) {
+            // we need to revert if the path is not defined counter-clockwise
+            Collections.reverse(points);
+        }
     }
 
     /**
@@ -55,7 +63,7 @@ public final class PathProfile {
      * Creates a new profile from the specified points.
      *
      * @param center profie center
-     * @param points profile points
+     * @param points profile points (outline in XY plane)
      * @return new profile
      */
     public static PathProfile fromPoints(Vector3d center, List<Vector3d> points) {
