@@ -32,6 +32,7 @@ import eu.mihosoft.jcsg.Extrude;
 import eu.mihosoft.jcsg.Polygon;
 import eu.mihosoft.vvecmath.Transform;
 import eu.mihosoft.vvecmath.Vector3d;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,7 +53,7 @@ public final class ExtrudeProfile {
      * Extrudes the specified profile along the given path.
      *
      * @param profile profile to extrude (profile expected in XY plane)
-     * @param path path
+     * @param path    path
      * @return CSG object (extruded profile)
      */
     public static CSG alongPath(PathProfile profile, List<Vector3d> path) {
@@ -60,14 +61,14 @@ public final class ExtrudeProfile {
                 map(p -> new Segment(p, profile)).
                 collect(Collectors.toList());
 
-        return extrudeSegments(profile, segments);
+        return extrudeSegments(profile, true, true, segments);
     }
 
     /**
      * Extrudes the specified profile along the given path.
      *
      * @param profile profile to extrude (profile expected in XY plane)
-     * @param path path
+     * @param path    path
      * @return CSG object (extruded profile)
      */
     public static CSG alongPath(PathProfile profile, Vector3d... path) {
@@ -75,7 +76,41 @@ public final class ExtrudeProfile {
                 map(p -> new Segment(p, profile)).
                 collect(Collectors.toList());
 
-        return extrudeSegments(profile, segments);
+        return extrudeSegments(profile, true, true, segments);
+    }
+
+    /**
+     * Extrudes the specified profile along the given path.
+     *
+     * @param profile profile to extrude (profile expected in XY plane)
+     * @param bottom  determines whether to close bottom segment
+     * @param top     determines whether to close top segment
+     * @param path    path
+     * @return list of polygons (extruded profile)
+     */
+    public static List<Polygon> alongPath(PathProfile profile, boolean bottom, boolean top, List<Vector3d> path) {
+        List<Segment> segments = path.stream().
+                map(p -> new Segment(p, profile)).
+                collect(Collectors.toList());
+
+        return extrudeSegments(profile, bottom, top, segments).getPolygons();
+    }
+
+    /**
+     * Extrudes the specified profile along the given path.
+     *
+     * @param profile profile to extrude (profile expected in XY plane)
+     * @param bottom  determines whether to close bottom segment
+     * @param top     determines whether to close top segment
+     * @param path    path
+     * @return list of polygons (extruded profile)
+     */
+    public static List<Polygon> alongPath(PathProfile profile, boolean bottom, boolean top, Vector3d... path) {
+        List<Segment> segments = Stream.of(path).
+                map(p -> new Segment(p, profile)).
+                collect(Collectors.toList());
+
+        return extrudeSegments(profile, bottom, top, segments).getPolygons();
     }
 
     /**
@@ -85,14 +120,15 @@ public final class ExtrudeProfile {
      * @return CSG object
      */
     private static CSG extrudeSegments(PathProfile profile,
-            List<Segment> segments) {
+                                       boolean bottom, boolean top,
+                                       List<Segment> segments) {
 
         computeSegmentNormals(segments);
 
         List<Vector3d> profilePoints = new ArrayList<>(profile.getPoints());
 
         // transform profile points to path direction
-        
+
         Vector3d profileNormal
                 = Polygon.fromPoints(profilePoints).plane.getNormal();
 
@@ -100,19 +136,19 @@ public final class ExtrudeProfile {
             Transform rot = Transform.unity().rot(profileNormal,
                     segments.get(0).normal);
             for (int i = 0; i < profilePoints.size(); i++) {
-                profilePoints.set(i, 
+                profilePoints.set(i,
                         profilePoints.get(i).transformed(rot));
             }
         }
 
         // translate profile to first path segment location
         Vector3d offset = segments.get(0).pos.minus(profile.getCenter());
-        
+
         Transform translate = Transform.unity().
                 translate(profile.getCenter().plus(offset));
-        
+
         for (int i = 0; i < profilePoints.size(); i++) {
-            profilePoints.set(i, 
+            profilePoints.set(i,
                     profilePoints.get(i).transformed(translate));
         }
 
@@ -174,7 +210,7 @@ public final class ExtrudeProfile {
             CSG csg = CSG.fromPolygons(Extrude.combine(
                     Polygon.fromPoints(profilePoints),
                     Polygon.fromPoints(profilePointsTransformed),
-                    i == 1, i == segments.size() - 1));
+                    i == 1 && bottom, i == segments.size() - 1 && top));
 
             polygons.addAll(csg.getPolygons());
 
