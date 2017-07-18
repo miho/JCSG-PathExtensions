@@ -202,7 +202,6 @@ public final class ExtrudeProfile {
         List<Vector3d> profilePoints = new ArrayList<>(profile.getPoints());
 
         // transform profile points to path direction
-
         Vector3d profileNormal
                 = Polygon.fromPoints(profilePoints).plane.getNormal();
 
@@ -326,7 +325,8 @@ public final class ExtrudeProfile {
                     profilePointsTransformedCorr.add(p);
                 }
 
-                profilePointsTransformed = profilePointsTransformedCorr;
+                profilePointsTransformed =
+                        new ArrayList<>(profilePointsTransformedCorr);
             }
 
             // combine both profile profiles and close start and end to 
