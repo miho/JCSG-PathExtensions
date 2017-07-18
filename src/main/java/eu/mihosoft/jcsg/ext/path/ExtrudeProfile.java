@@ -30,6 +30,7 @@ package eu.mihosoft.jcsg.ext.path;
 import eu.mihosoft.jcsg.CSG;
 import eu.mihosoft.jcsg.Extrude;
 import eu.mihosoft.jcsg.Polygon;
+import eu.mihosoft.vvecmath.Plane;
 import eu.mihosoft.vvecmath.Transform;
 import eu.mihosoft.vvecmath.Vector3d;
 
@@ -46,7 +47,7 @@ import java.util.stream.Stream;
 public final class ExtrudeProfile {
 
     private ExtrudeProfile() {
-        throw new AssertionError("Dont instantiate me!");
+        throw new AssertionError("Don't instantiate me!");
     }
 
     /**
@@ -61,7 +62,7 @@ public final class ExtrudeProfile {
                 map(p -> new Segment(p, profile)).
                 collect(Collectors.toList());
 
-        return extrudeSegments(profile, true, true, segments);
+        return extrudeSegments(profile, true, true, null, segments);
     }
 
     /**
@@ -76,7 +77,7 @@ public final class ExtrudeProfile {
                 map(p -> new Segment(p, profile)).
                 collect(Collectors.toList());
 
-        return extrudeSegments(profile, true, true, segments);
+        return extrudeSegments(profile, true, true, null, segments);
     }
 
     /**
@@ -93,7 +94,7 @@ public final class ExtrudeProfile {
                 map(p -> new Segment(p, profile)).
                 collect(Collectors.toList());
 
-        return extrudeSegments(profile, bottom, top, segments).getPolygons();
+        return extrudeSegments(profile, bottom, top, null, segments).getPolygons();
     }
 
     /**
@@ -110,17 +111,90 @@ public final class ExtrudeProfile {
                 map(p -> new Segment(p, profile)).
                 collect(Collectors.toList());
 
-        return extrudeSegments(profile, bottom, top, segments).getPolygons();
+        return extrudeSegments(profile, bottom, top, null, segments).getPolygons();
+    }
+
+    /**
+     * Extrudes the specified profile along the given path.
+     *
+     * @param profile profile to extrude (profile expected in XY plane)
+     * @param orientationPlane plane for fixing profile orientation to (optional, may be null)
+     * @param path    path
+     * @return CSG object (extruded profile)
+     */
+    public static CSG alongPath(PathProfile profile, Plane orientationPlane, List<Vector3d> path) {
+        List<Segment> segments = path.stream().
+                map(p -> new Segment(p, profile)).
+                collect(Collectors.toList());
+
+        return extrudeSegments(profile, true, true, orientationPlane, segments);
+    }
+
+    /**
+     * Extrudes the specified profile along the given path.
+     *
+     * @param profile profile to extrude (profile expected in XY plane)
+     * @param orientationPlane plane for fixing profile orientation to (optional, may be null)
+     * @param path    path
+     * @return CSG object (extruded profile)
+     */
+    public static CSG alongPath(PathProfile profile, Plane orientationPlane, Vector3d... path) {
+        List<Segment> segments = Stream.of(path).
+                map(p -> new Segment(p, profile)).
+                collect(Collectors.toList());
+
+        return extrudeSegments(profile, true, true, orientationPlane, segments);
+    }
+
+    /**
+     * Extrudes the specified profile along the given path.
+     *
+     * @param profile profile to extrude (profile expected in XY plane)
+     * @param bottom  determines whether to close bottom segment
+     * @param top     determines whether to close top segment
+     * @param orientationPlane plane for fixing profile orientation to (optional, may be null)
+     * @param path    path
+     * @return list of polygons (extruded profile)
+     */
+    public static List<Polygon> alongPath(PathProfile profile, boolean bottom, boolean top,
+                                          Plane orientationPlane, List<Vector3d> path) {
+        List<Segment> segments = path.stream().
+                map(p -> new Segment(p, profile)).
+                collect(Collectors.toList());
+
+        return extrudeSegments(profile, bottom, top, orientationPlane, segments).getPolygons();
+    }
+
+    /**
+     * Extrudes the specified profile along the given path.
+     *
+     * @param profile profile to extrude (profile expected in XY plane)
+     * @param bottom  determines whether to close bottom segment
+     * @param top     determines whether to close top segment
+     * @param orientationPlane plane for fixing profile orientation to (optional, may be null)
+     * @param path    path
+     * @return list of polygons (extruded profile)
+     */
+    public static List<Polygon> alongPath(PathProfile profile, boolean bottom, boolean top,
+                                          Plane orientationPlane, Vector3d... path) {
+        List<Segment> segments = Stream.of(path).
+                map(p -> new Segment(p, profile)).
+                collect(Collectors.toList());
+
+        return extrudeSegments(profile, bottom, top, orientationPlane, segments).getPolygons();
     }
 
     /**
      * Extrudes the specified segments.
-     *
+     * @param bottom  determines whether to close bottom segment
+     * @param top     determines whether to close top segment
      * @param segments segments to extrude
+     * @param orientationPlane plane for fixing profile orientation to (optional, may be null)
      * @return CSG object
      */
     private static CSG extrudeSegments(PathProfile profile,
                                        boolean bottom, boolean top,
+                                       Plane orientationPlane,
                                        List<Segment> segments) {
 
         computeSegmentNormals(segments);
@@ -154,6 +228,15 @@ public final class ExtrudeProfile {
 
         List<Polygon> polygons = new ArrayList<>();
 
+        double angleToPlaneNormal = 0;
+
+        if(orientationPlane !=null) {
+            // compute angle between edge (v0,v1) of the profile and
+            // the normal of the specified orientation-plane
+            angleToPlaneNormal = profilePoints.get(0).minus(profilePoints.get(1)).
+                    angle(orientationPlane.getNormal());
+        }
+
         for (int i = 0; i < segments.size(); i++) {
             Segment s = segments.get(i);
 
@@ -167,6 +250,15 @@ public final class ExtrudeProfile {
             // Note: there are several solutions out there for preventing
             //       the twisting. To me, the most pragmatic one seems to be
             //       https://www.cs.indiana.edu/pub/techreports/TR425.pdf
+            //
+            // Problematic for screw threads:
+            //
+            // - one problem with this approach is that the orientation of the
+            //   profile along the curve (rotation axis in direction of the curve tangent)
+            //   changes
+            //
+            // - we add support for fixing profile orientation to specified plane
+            //
             Vector3d curveTangent0 = segments.get(i - 1).getNormal();
             Vector3d curveTangent1 = s.getNormal();
             Vector3d curveBiNormal = curveTangent1.crossed(curveTangent0);
@@ -203,6 +295,38 @@ public final class ExtrudeProfile {
 
                 // add transformed point to list
                 profilePointsTransformed.add(p);
+            }
+
+            if(orientationPlane!=null) {
+
+                // compute angle between current profile edge (v0, v1) and
+                // the normal of the orientation-plane
+                double angleToPlaneNormalNew = profilePointsTransformed.get(0).
+                        minus(profilePointsTransformed.get(1))
+                        .angle(orientationPlane.getNormal());
+
+                // for undoing the rotation with respect to the reference angle
+                // 'angleToPlaneNormal' we subtract the current angle from
+                // the reference angle
+                double angleToRot = angleToPlaneNormal - angleToPlaneNormalNew;
+
+                // define the rotation about curve tangent
+                Transform corrRot = Transform.unity().
+                        rot(s.getPos(), s.getNormal(), angleToRot);
+
+                List<Vector3d> profilePointsTransformedCorr
+                        = new ArrayList<>(profilePointsTransformed.size());
+
+                // finally apply the correction transforms
+                for (Vector3d p : profilePointsTransformed) {
+                    // apply rotation transform
+                    p = p.transformed(corrRot);
+
+                    // add transformed point to list
+                    profilePointsTransformedCorr.add(p);
+                }
+
+                profilePointsTransformed = profilePointsTransformedCorr;
             }
 
             // combine both profile profiles and close start and end to 
