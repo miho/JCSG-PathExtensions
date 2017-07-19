@@ -227,14 +227,8 @@ public final class ExtrudeProfile {
 
         List<Polygon> polygons = new ArrayList<>();
 
+        // correction angle (used if plane specified)
         double angleToPlaneNormal = 0;
-
-        if(orientationPlane !=null) {
-            // compute angle between edge (v0,v1) of the profile and
-            // the normal of the specified orientation-plane
-            angleToPlaneNormal = profilePoints.get(0).minus(profilePoints.get(1)).
-                    angle(orientationPlane.getNormal());
-        }
 
         for (int i = 0; i < segments.size(); i++) {
             Segment s = segments.get(i);
@@ -296,40 +290,43 @@ public final class ExtrudeProfile {
                 profilePointsTransformed.add(p);
             }
 
+            //perform correction if orientation plane has been specified
             if(orientationPlane!=null) {
-
                 // compute angle between current profile edge (v0, v1) and
                 // the normal of the orientation-plane
                 double angleToPlaneNormalNew = profilePointsTransformed.get(0).
                         minus(profilePointsTransformed.get(1))
                         .angle(orientationPlane.getNormal());
 
-                // for undoing the rotation with respect to the reference angle
-                // 'angleToPlaneNormal' we subtract the current angle from
-                // the reference angle
-                double angleToRot = angleToPlaneNormal - angleToPlaneNormalNew;
+                if(Double.compare(angleToPlaneNormal, 0.0) ==0) {
+                    angleToPlaneNormal = angleToPlaneNormalNew;
+                } else {
+                    // for undoing the rotation with respect to the reference angle
+                    // 'angleToPlaneNormal' we subtract the current angle from
+                    // the reference angle
+                    double angleToRot = angleToPlaneNormal - angleToPlaneNormalNew;
 
-                // define the rotation about curve tangent
-                Transform corrRot = Transform.unity().
-                        rot(s.getPos(), s.getNormal(), angleToRot);
+                    // define the rotation about curve tangent
+                    Transform corrRot = Transform.unity().
+                            rot(s.getPos(), s.getNormal(), -angleToRot);
 
-                List<Vector3d> profilePointsTransformedCorr
-                        = new ArrayList<>(profilePointsTransformed.size());
+                    List<Vector3d> profilePointsTransformedCorr
+                            = new ArrayList<>(profilePointsTransformed.size());
 
-                // finally apply the correction transforms
-                for (Vector3d p : profilePointsTransformed) {
-                    // apply rotation transform
-                    p = p.transformed(corrRot);
+                    // finally apply the correction transforms
+                    for (Vector3d p : profilePointsTransformed) {
+                        // apply rotation transform
+                        p = p.transformed(corrRot);
 
-                    // add transformed point to list
-                    profilePointsTransformedCorr.add(p);
+                        // add transformed point to list
+                        profilePointsTransformedCorr.add(p);
+                    }
+
+                    profilePointsTransformed = profilePointsTransformedCorr;
                 }
-
-                profilePointsTransformed =
-                        new ArrayList<>(profilePointsTransformedCorr);
             }
 
-            // combine both profile profiles and close start and end to 
+            // combine both profiles and close start and end to
             // yield a valid CSG object
             CSG csg = CSG.fromPolygons(Extrude.combine(
                     Polygon.fromPoints(profilePoints),
