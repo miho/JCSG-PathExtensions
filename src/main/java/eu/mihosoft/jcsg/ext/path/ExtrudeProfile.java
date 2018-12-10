@@ -203,7 +203,7 @@ public final class ExtrudeProfile {
 
         // transform profile points to path direction
         Vector3d profileNormal
-                = Polygon.fromPoints(profilePoints).plane.getNormal();
+                = Polygon.fromPoints(profilePoints).getPlane().getNormal();
 
         if (!profileNormal.equals(segments.get(0).normal)) {
             Transform rot = Transform.unity().rot(profileNormal,
